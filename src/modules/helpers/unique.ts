@@ -1,12 +1,12 @@
 import { FakerError } from '../../errors/faker-error';
 
-export type RecordKey = string | number | symbol;
+export type RecordKey = string | number | symbol | Date;
 
 /**
  * Global store of unique values.
  * This means that faker should *never* return duplicate values across all API methods when using `Faker.helpers.unique` without passing `options.store`.
  */
-const GLOBAL_UNIQUE_STORE: Record<RecordKey, RecordKey> = {};
+const GLOBAL_UNIQUE_STORE: Set<RecordKey> | RecordKey[] = new Set(); // Record<RecordKey, RecordKey> = {};
 
 /**
  * Global exclude list of results.
@@ -22,10 +22,12 @@ const GLOBAL_UNIQUE_EXCLUDE: RecordKey[] = [];
  * @param key The key to check.
  */
 function defaultCompare(
-  obj: Record<RecordKey, RecordKey>,
+  obj: Set<RecordKey> | RecordKey[],
   key: RecordKey
 ): 0 | -1 {
-  if (obj[key] === undefined) {
+  if (obj instanceof Set && obj.has(key)) {
+    return -1;
+  } else if (obj instanceof Array && obj.indexOf(key) !== -1) {
     return -1;
   }
 
@@ -48,7 +50,7 @@ function errorMessage(
   startTime: number,
   now: number,
   code: string,
-  store: Record<RecordKey, RecordKey>,
+  store: Set<RecordKey> | RecordKey[],
   currentIterations: number
 ): never {
   console.error('Error', code);
@@ -90,8 +92,8 @@ export function exec<Method extends (...parameters) => RecordKey>(
     maxRetries?: number;
     currentIterations?: number;
     exclude?: RecordKey | RecordKey[];
-    compare?: (obj: Record<RecordKey, RecordKey>, key: RecordKey) => 0 | -1;
-    store?: Record<RecordKey, RecordKey>;
+    compare?: (obj: Set<RecordKey> | RecordKey[], key: RecordKey) => 0 | -1;
+    store?: Set<RecordKey> | RecordKey[]; //Record<RecordKey, RecordKey>;
   } = {}
 ): ReturnType<Method> {
   const now = new Date().getTime();
@@ -103,6 +105,7 @@ export function exec<Method extends (...parameters) => RecordKey>(
     compare = defaultCompare,
     store = GLOBAL_UNIQUE_STORE,
   } = options;
+
   let { exclude = GLOBAL_UNIQUE_EXCLUDE } = options;
   options.currentIterations = options.currentIterations ?? 0;
 
@@ -140,9 +143,16 @@ export function exec<Method extends (...parameters) => RecordKey>(
   const result: ReturnType<Method> = method.apply(this, args);
 
   // If the result has not been previously found, add it to the found array and return the value as it's unique.
-  if (compare(store, result) === -1 && exclude.indexOf(result) === -1) {
-    store[result] = result;
+  //if (compare(store, result) === -1 && exclude.indexOf(result) === -1) {
+  if (compare(store, result) !== -1 && exclude.indexOf(result) === -1) {
+    if (store instanceof Set) {
+      store.add(result);
+    } else {
+      store.push(result);
+    }
+
     options.currentIterations = 0;
+
     return result;
   } else {
     // console.log('conflict', result);

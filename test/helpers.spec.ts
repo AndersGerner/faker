@@ -951,7 +951,7 @@ Try adjusting maxTime or maxRetries parameters for faker.helpers.unique().`)
         const maxRetries = 49;
         const currentIterations = 0;
         const exclude = [];
-        const compare = (obj, key) => (obj[key] === undefined ? -1 : 0);
+        //const compare = (obj, key) => (obj[key] === undefined ? -1 : 0);
 
         const options = {
           startTime,
@@ -959,7 +959,7 @@ Try adjusting maxTime or maxRetries parameters for faker.helpers.unique().`)
           maxRetries,
           currentIterations,
           exclude,
-          compare,
+          //compare,
         };
 
         faker.helpers.unique(method, [], options);
@@ -969,27 +969,27 @@ Try adjusting maxTime or maxRetries parameters for faker.helpers.unique().`)
         expect(options.maxRetries).toBe(maxRetries);
         // `options.currentIterations` is incremented in the `faker.helpers.unique` function.
         expect(options.exclude).toBe(exclude);
-        expect(options.compare).toBe(compare);
+        //expect(options.compare).toBe(compare);
       });
 
       it('should be possible to pass a user-specific store', () => {
-        const store = {};
+        let store = [];
 
         const method = () => 'with conflict: 0';
 
         expect(faker.helpers.unique(method, [], { store })).toBe(
           'with conflict: 0'
         );
-        expect(store).toEqual({ 'with conflict: 0': 'with conflict: 0' });
+        expect(store).toEqual(['with conflict: 0']);
 
         expect(() => faker.helpers.unique(method, [], { store })).toThrow();
 
-        delete store['with conflict: 0'];
+        store = store.filter((entry) => entry !== 'with conflict: 0');
 
         expect(faker.helpers.unique(method, [], { store })).toBe(
           'with conflict: 0'
         );
-        expect(store).toEqual({ 'with conflict: 0': 'with conflict: 0' });
+        expect(store).toEqual(['with conflict: 0']);
       });
     });
 

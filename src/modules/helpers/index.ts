@@ -835,8 +835,8 @@ export class HelpersModule {
       maxRetries?: number;
       currentIterations?: number;
       exclude?: RecordKey | RecordKey[];
-      compare?: (obj: Record<RecordKey, RecordKey>, key: RecordKey) => 0 | -1;
-      store?: Record<RecordKey, RecordKey>;
+      compare?: (obj: Set<RecordKey> | RecordKey[], key: RecordKey) => 0 | -1;
+      store?: Set<RecordKey> | RecordKey[];
     } = {}
   ): ReturnType<Method> {
     const { maxTime = 50, maxRetries = 50 } = options;
